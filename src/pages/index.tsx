@@ -1,18 +1,48 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { type NextPage } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
 import useJikan from '../hooks/useJikan';
 
-const Home: NextPage = () => {
-  const { data, isLoading, isLoadingMore, error, size, setSize } = useJikan();
+type AnimeListProps = {
+  page: number;
+  isHidden?: boolean;
+};
 
-  // Debugging
-  useEffect(() => {
-    console.log({ data, isLoading, isLoadingMore, error, size });
-  }, [data, isLoading, isLoadingMore, error, size]);
+const AnimePage = ({ page, isHidden = false }: AnimeListProps): JSX.Element | null => {
+  const { data } = useJikan(page);
+
+  if (isHidden) {
+    return null;
+  }
+
+  return (
+    <>
+      {data?.map((item) => (
+        <Link
+          className="flex max-w-xs rounded-xl"
+          style={{
+            backgroundImage: `url(${item.images.jpg.large_image_url})`,
+          }}
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          key={item.mal_id}
+        >
+          <div className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-xl bg-black/40 p-4 text-white backdrop-brightness-75">
+            <h3 className="text-center text-2xl font-bold">{item.title_english}</h3>
+            <div className="text-lg line-clamp-3">{item.synopsis}</div>
+          </div>
+        </Link>
+      ))}
+    </>
+  );
+};
+
+const Home: NextPage = () => {
+  const [page, setPage] = useState<number>(0);
 
   return (
     <>
@@ -22,17 +52,30 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex min-h-screen flex-col items-center justify-center bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-amber-200 via-violet-600 to-sky-900 bg-fixed">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
-          <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-            Anicore
-          </h1>
+        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
+          <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">Anicore</h1>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-8">
+            {/* Current page */}
+            <AnimePage page={page} />
+            {/* Next page (for preloading data) */}
+            <AnimePage page={page + 1} isHidden />
+
+            {/* Load more button */}
             <button
               type="button"
-              className="col-span-3 flex max-w-full flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-              onClick={() => setSize(size + 1)}
+              className="flex max-w-full flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
+              onClick={() => setPage(Math.max(0, page - 1))}
             >
-              <h3 className="text-2xl font-bold">{isLoadingMore ? 'Loading...' : 'Load more'}</h3>
+              <h3 className="text-2xl font-bold">Prev</h3>
+            </button>
+
+            {/* Load more button */}
+            <button
+              type="button"
+              className="flex max-w-full flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
+              onClick={() => setPage(page + 1)}
+            >
+              <h3 className="text-2xl font-bold">Next (now: {page})</h3>
             </button>
           </div>
         </div>
