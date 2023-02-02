@@ -19,8 +19,8 @@ function useJikan() {
     revalidateFirstPage: false,
   });
 
-  // Indicates that an additional page (other than the initial page) is being fetched
-  const isLoadingMore = (!data && !error) || (size > 0 && data && typeof data[size - 1] === 'undefined');
+  // Indicates that an additional page is being fetched
+  const isLoadingMore = isLoading || (size > 0 && data != null && data?.length < size);
 
   return {
     data,
