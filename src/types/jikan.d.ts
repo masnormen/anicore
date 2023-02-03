@@ -106,15 +106,15 @@ export interface Title {
   title: string;
 }
 
-export interface AiringDate {
+export interface AiringDateDetail {
   day: number;
   month: number;
   year: number;
 }
 
 export interface AiringDate {
-  from: AiringDate;
-  to?: AiringDate;
+  from: AiringDateDetail;
+  to?: AiringDateDetail;
 }
 
 export interface Aired {
