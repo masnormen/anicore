@@ -3,14 +3,12 @@ import axios, { type AxiosError } from 'axios';
 import useSWR from 'swr';
 
 import type { JikanResponse, Anime } from '../types/jikan';
+import type { AnimeType } from '../types/search';
 
 const fetcher = async (url: string) => {
   const res = await axios.get<JikanResponse<Anime>>(url);
   return res.data;
 };
-
-export const animeType = ['tv', 'movie', 'ova', 'special', 'ona', 'music'] as const;
-export type AnimeType = (typeof animeType)[number];
 
 function useSearch(query: string, page: number, type: AnimeType) {
   const { data, isLoading, error, ...rest } = useSWR<JikanResponse<Anime>, AxiosError>(

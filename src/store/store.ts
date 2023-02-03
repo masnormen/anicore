@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AnimeType } from '../hooks/useSearch';
+import type { AnimeType } from '../types/search';
 
 interface AnicoreState {
   searchText: string;

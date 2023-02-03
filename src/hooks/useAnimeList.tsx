@@ -9,7 +9,7 @@ const fetcher = async (url: string) => {
   return res.data;
 };
 
-function useJikan(page: number) {
+function useAnimeList(page: number) {
   const { data, isLoading, error, ...rest } = useSWR<JikanResponse<Anime>, AxiosError>(
     `/api/v4/top/anime?page=${page + 1}`,
     fetcher
@@ -24,4 +24,4 @@ function useJikan(page: number) {
   };
 }
 
-export default useJikan;
+export default useAnimeList;

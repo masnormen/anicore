@@ -1,3 +1,5 @@
+
+
 export interface JikanResponse<T> {
   pagination: JikanPagination;
   data: T[];
