@@ -14,12 +14,12 @@ const AnimeCard = ({ anime }: { anime: Anime }): JSX.Element => {
     >
       <div className="flex h-64 w-full flex-row space-x-6 rounded-xl bg-black/20 p-6 text-white backdrop-blur-lg backdrop-brightness-50 hover:backdrop-brightness-0">
         <Image
-          className="rounded"
+          className="min-h-full rounded"
           priority
           src={anime.images.jpg.large_image_url}
           alt={anime.title}
           width={144}
-          height={64}
+          height={144}
         />
         <div className="flex h-full flex-col space-y-2">
           <h3 className="text-2xl font-bold line-clamp-2">{anime.title}</h3>

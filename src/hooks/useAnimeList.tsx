@@ -6,22 +6,18 @@ import type { JikanResponse, Anime } from '../types/jikan';
 
 const fetcher = async (url: string) => {
   const res = await axios.get<JikanResponse<Anime>>(url);
-  return res.data.data;
+  return res.data;
 };
 
-// const getKey: SWRInfiniteKeyLoader<Anime[][]> = (page, previousPageData) => {
-//   if (previousPageData && !previousPageData.length) return null; // reached the end
-//   return `/api/v4/top/anime?page=${page + 1}`; // SWR key
-// };
-
 function useJikan(page: number) {
-  const { data, isLoading, error, ...rest } = useSWR<Anime[], AxiosError>(
+  const { data, isLoading, error, ...rest } = useSWR<JikanResponse<Anime>, AxiosError>(
     `/api/v4/top/anime?page=${page + 1}`,
     fetcher
   );
 
   return {
-    data,
+    data: data?.data,
+    hasNextPage: data?.pagination.has_next_page ?? false,
     isLoading,
     error,
     ...rest,

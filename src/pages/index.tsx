@@ -13,14 +13,20 @@ import useSearch, { animeType } from '../hooks/useSearch';
 import Image from 'next/image';
 import AnimeCard from '../components/AnimeCard';
 import { useAnicoreStore } from '../store/store';
+import Spinner from '../components/Spinner';
 
 type AnimeListProps = {
   page: number;
   isHidden?: boolean;
+  setHasNextPage: Dispatch<SetStateAction<boolean>>;
 };
 
-const AnimePage = ({ page, isHidden = false }: AnimeListProps): JSX.Element | null => {
-  const { data, isLoading } = useJikan(page);
+const AnimePage = ({ page, isHidden = false, setHasNextPage }: AnimeListProps): JSX.Element | null => {
+  const { data, isLoading, hasNextPage } = useJikan(page);
+
+  useEffect(() => {
+    setHasNextPage(hasNextPage);
+  }, [hasNextPage, setHasNextPage]);
 
   if (isHidden) {
     return null;
@@ -28,10 +34,8 @@ const AnimePage = ({ page, isHidden = false }: AnimeListProps): JSX.Element | nu
 
   if (isLoading) {
     return (
-      <div className="flex h-64 w-full flex-row space-x-6 rounded-xl bg-black/40 p-6 text-white">
-        <div className="flex h-full flex-col space-y-2">
-          <h3 className="text-2xl font-bold line-clamp-2">Loading...</h3>
-        </div>
+      <div className="flex h-64 w-64 max-w-full flex-col items-center justify-center rounded-xl bg-black/60 p-4 text-white hover:bg-black/80 disabled:pointer-events-none disabled:opacity-50">
+        <Spinner />
       </div>
     );
   }
@@ -50,10 +54,17 @@ type SearchPageProps = {
   page: number;
   animeType: AnimeType;
   isHidden?: boolean;
+  setHasNextPage: Dispatch<SetStateAction<boolean>>;
 };
 
-const SearchPage = ({ query, page, animeType, isHidden }: SearchPageProps): JSX.Element | null => {
-  const { data, isLoading } = useSearch(query, page, animeType);
+const SearchPage = ({ query, page, animeType, isHidden, setHasNextPage }: SearchPageProps): JSX.Element | null => {
+  const { data, isLoading, hasNextPage } = useSearch(query, page, animeType);
+
+  useEffect(() => {
+    if (!hasNextPage) {
+      setHasNextPage(false);
+    }
+  }, [hasNextPage, setHasNextPage]);
 
   if (isHidden) {
     return null;
@@ -61,10 +72,16 @@ const SearchPage = ({ query, page, animeType, isHidden }: SearchPageProps): JSX.
 
   if (isLoading) {
     return (
-      <div className="flex h-64 w-full flex-row space-x-6 rounded-xl bg-black/40 p-6 text-white">
-        <div className="flex h-full flex-col space-y-2">
-          <h3 className="text-2xl font-bold line-clamp-2">Loading...</h3>
-        </div>
+      <div className="flex h-64 w-64 max-w-full flex-col items-center justify-center rounded-xl bg-black/60 p-4 text-white hover:bg-black/80 disabled:pointer-events-none disabled:opacity-50">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (!isLoading && data && data.length === 0) {
+    return (
+      <div className="flex h-64 w-64 max-w-full flex-col items-center justify-center rounded-xl bg-black/60 p-4 text-white hover:bg-black/80 disabled:pointer-events-none disabled:opacity-50">
+        No anime found!
       </div>
     );
   }
@@ -160,6 +177,7 @@ const SearchBar = (): JSX.Element => {
 
 const Home: NextPage = () => {
   const [page, setPage] = useState<number>(0);
+  const [hasNextPage, setHasNextPage] = useState<boolean>(true);
 
   const searchText = useAnicoreStore((state) => state.searchText);
   const animeType = useAnicoreStore((state) => state.animeType);
@@ -176,48 +194,58 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="bg-conic-t flex min-h-screen flex-col items-center justify-center from-orange-900 via-amber-100 to-orange-900 bg-fixed">
-        <div className="container flex flex-col items-center justify-center space-y-16 px-8 py-32 sm:py-48 sm:px-12">
+        <div className="container flex flex-col items-center justify-center space-y-16 px-8 py-32 lg:py-48 lg:px-12">
           <div className="flex flex-col items-center space-y-4">
-            <h1 className="bg-conic-tl from-stone-600 via-zinc-900 to-purple-300 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent sm:text-[5rem]">
-              Anicore
-            </h1>
-            <h2 className="text-lg tracking-tight text-gray-800 sm:text-[1.5rem]">The Anime Directory</h2>
+            <Link href="/">
+              <h1 className="bg-conic-tl from-stone-600 via-zinc-900 to-purple-300 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent lg:text-[5rem]">
+                Anicore
+              </h1>
+            </Link>
+            <h2 className="text-lg tracking-tight text-gray-800 lg:text-[1.5rem]">The Anime Directory</h2>
           </div>
 
           <SearchBar />
 
-          <h2 className="text-lg font-bold tracking-tight text-gray-800 sm:text-[1.5rem]">
+          <h2 className="text-lg font-bold tracking-tight text-gray-800 lg:text-[1.5rem]">
             {searchText.length > 0 ? `Showing results for "${searchText}"` : 'Top Anime'}
           </h2>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-8">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-8">
             {searchText.length > 0 ? (
               <>
-                <SearchPage query={searchText} page={page} animeType={animeType} />
+                <SearchPage query={searchText} setHasNextPage={setHasNextPage} page={page} animeType={animeType} />
                 {/* Preloading */}
-                <SearchPage query={searchText} page={page + 1} animeType={animeType} isHidden />
+                <SearchPage
+                  query={searchText}
+                  setHasNextPage={setHasNextPage}
+                  page={page + 1}
+                  animeType={animeType}
+                  isHidden
+                />
               </>
             ) : (
               <>
-                <AnimePage page={page} />
+                <AnimePage setHasNextPage={setHasNextPage} page={page} />
                 {/* Preloading */}
-                <AnimePage page={page + 1} isHidden />
+                <AnimePage setHasNextPage={setHasNextPage} page={page + 1} isHidden />
               </>
             )}
 
             <button
+              disabled={page === 0}
               type="button"
-              className="flex max-w-full flex-col gap-4 rounded-xl bg-black/40 p-4 text-white hover:bg-black/60"
+              className="flex h-64 max-w-full flex-col items-center justify-center  rounded-xl bg-black/60 p-4 text-white hover:bg-black/80 disabled:pointer-events-none disabled:opacity-50"
               onClick={() => setPage(Math.max(0, page - 1))}
             >
-              <h3 className="text-2xl font-bold">Prev</h3>
+              <h3 className="text-2xl font-bold">⬅ Prev</h3>
             </button>
             <button
+              disabled={!hasNextPage}
               type="button"
-              className="flex max-w-full flex-col gap-4 rounded-xl bg-black/40 p-4 text-white hover:bg-black/60"
+              className="flex h-64 max-w-full flex-col items-center justify-center rounded-xl bg-black/60 p-4 text-white hover:bg-black/80 disabled:pointer-events-none disabled:opacity-50"
               onClick={() => setPage(page + 1)}
             >
-              <h3 className="text-2xl font-bold">Next</h3>
+              <h3 className="text-2xl font-bold">Next ➡</h3>
             </button>
           </div>
         </div>
