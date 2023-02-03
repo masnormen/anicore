@@ -10,6 +10,9 @@ import cn from '../lib/cn';
 import { useDebounce } from 'use-debounce';
 import type { AnimeType } from '../hooks/useSearch';
 import useSearch, { animeType } from '../hooks/useSearch';
+import Image from 'next/image';
+import AnimeCard from '../components/AnimeCard';
+import { useAnicoreStore } from '../store/store';
 
 type AnimeListProps = {
   page: number;
@@ -17,30 +20,26 @@ type AnimeListProps = {
 };
 
 const AnimePage = ({ page, isHidden = false }: AnimeListProps): JSX.Element | null => {
-  const { data } = useJikan(page);
+  const { data, isLoading } = useJikan(page);
 
   if (isHidden) {
     return null;
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex h-64 w-full flex-row space-x-6 rounded-xl bg-black/40 p-6 text-white">
+        <div className="flex h-full flex-col space-y-2">
+          <h3 className="text-2xl font-bold line-clamp-2">Loading...</h3>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      {data?.map((item) => (
-        <Link
-          className="flex max-w-xs rounded-xl"
-          style={{
-            backgroundImage: `url(${item.images.jpg.large_image_url})`,
-          }}
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          key={item.mal_id}
-        >
-          <div className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-xl bg-black/40 p-4 text-white backdrop-brightness-75">
-            <h3 className="text-center text-2xl font-bold">{item.title}</h3>
-            <div className="text-lg line-clamp-3">{item.synopsis}</div>
-          </div>
-        </Link>
+      {data?.map((item, idx) => (
+        <AnimeCard key={idx} anime={item} />
       ))}
     </>
   );
@@ -54,44 +53,48 @@ type SearchPageProps = {
 };
 
 const SearchPage = ({ query, page, animeType, isHidden }: SearchPageProps): JSX.Element | null => {
-  const { data } = useSearch(query, page, animeType);
+  const { data, isLoading } = useSearch(query, page, animeType);
 
   if (isHidden) {
     return null;
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex h-64 w-full flex-row space-x-6 rounded-xl bg-black/40 p-6 text-white">
+        <div className="flex h-full flex-col space-y-2">
+          <h3 className="text-2xl font-bold line-clamp-2">Loading...</h3>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      {data?.map((item) => (
-        <Link
-          className="flex max-w-xs rounded-xl"
-          style={{
-            backgroundImage: `url(${item.images.jpg.large_image_url})`,
-          }}
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          key={item.mal_id}
-        >
-          <div className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-xl bg-black/40 p-4 text-white backdrop-brightness-75">
-            <h3 className="text-center text-2xl font-bold">{item.title}</h3>
-            <div className="text-lg line-clamp-3">{item.synopsis}</div>
-          </div>
-        </Link>
+      {data?.map((item, idx) => (
+        <AnimeCard key={idx} anime={item} />
       ))}
     </>
   );
 };
 
-type SearchBarProps = {
-  rawText: string;
-  text: string;
-  setRawText: Dispatch<SetStateAction<string>>;
-  setSearchAnimeType: Dispatch<SetStateAction<AnimeType>>;
-};
-const SearchBar = ({ rawText, text, setRawText, setSearchAnimeType }: SearchBarProps): JSX.Element => {
+// type SearchBarProps = {
+//   setSearchAnimeType: Dispatch<SetStateAction<AnimeType>>;
+// };
+
+const SearchBar = (): JSX.Element => {
   const dropRef = useRef<HTMLDivElement>(null);
   const [isOpen, setOpen] = useState(false);
+
+  const setSearchText = useAnicoreStore((state) => state.setSearchText);
+  const setAnimeType = useAnicoreStore((state) => state.setAnimeType);
+
+  const [rawText, setRawText] = useState<string>('');
+  const [debouncedText] = useDebounce(rawText, 800);
+
+  useEffect(() => {
+    setSearchText(debouncedText);
+  }, [debouncedText, setSearchText]);
 
   useEffect(() => {
     const handleOutsideClicks = (event: MouseEvent) => {
@@ -132,7 +135,7 @@ const SearchBar = ({ rawText, text, setRawText, setSearchAnimeType }: SearchBarP
                   type="button"
                   key={idx}
                   className="inline-flex w-full px-4 py-2 hover:bg-gray-100"
-                  onClick={() => setSearchAnimeType(item)}
+                  onClick={() => setAnimeType(item)}
                 >
                   {item}
                 </button>
@@ -158,29 +161,41 @@ const SearchBar = ({ rawText, text, setRawText, setSearchAnimeType }: SearchBarP
 const Home: NextPage = () => {
   const [page, setPage] = useState<number>(0);
 
-  const [rawText, setRawText] = useState<string>('');
-  const [text] = useDebounce(rawText, 800);
+  const searchText = useAnicoreStore((state) => state.searchText);
+  const animeType = useAnicoreStore((state) => state.animeType);
 
-  const [searchAnimeType, setSearchAnimeType] = useState<AnimeType>('tv');
+  useEffect(() => {
+    setPage(0);
+  }, [searchText]);
 
   return (
     <>
       <Head>
-        <title>Create T3 App</title>
+        <title>Anicore</title>
         <meta name="description" content="Generated by create-t3-app" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-amber-200 via-violet-600 to-sky-900 bg-fixed">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">Anicore</h1>
-          <SearchBar {...{ rawText, text, setRawText, setSearchAnimeType }} />
+      <main className="bg-conic-t flex min-h-screen flex-col items-center justify-center from-orange-900 via-amber-100 to-orange-900 bg-fixed">
+        <div className="container flex flex-col items-center justify-center space-y-16 px-8 py-32 sm:py-48 sm:px-12">
+          <div className="flex flex-col items-center space-y-4">
+            <h1 className="bg-conic-tl from-stone-600 via-zinc-900 to-purple-300 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent sm:text-[5rem]">
+              Anicore
+            </h1>
+            <h2 className="text-lg tracking-tight text-gray-800 sm:text-[1.5rem]">The Anime Directory</h2>
+          </div>
+
+          <SearchBar />
+
+          <h2 className="text-lg font-bold tracking-tight text-gray-800 sm:text-[1.5rem]">
+            {searchText.length > 0 ? `Showing results for "${searchText}"` : 'Top Anime'}
+          </h2>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-8">
-            {text.length > 0 ? (
+            {searchText.length > 0 ? (
               <>
-                <SearchPage query={text} page={page} animeType={searchAnimeType} />
+                <SearchPage query={searchText} page={page} animeType={animeType} />
                 {/* Preloading */}
-                <SearchPage query={text} page={page + 1} animeType={searchAnimeType} isHidden />
+                <SearchPage query={searchText} page={page + 1} animeType={animeType} isHidden />
               </>
             ) : (
               <>
@@ -190,22 +205,19 @@ const Home: NextPage = () => {
               </>
             )}
 
-            {/* Load more button */}
             <button
               type="button"
-              className="flex max-w-full flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
+              className="flex max-w-full flex-col gap-4 rounded-xl bg-black/40 p-4 text-white hover:bg-black/60"
               onClick={() => setPage(Math.max(0, page - 1))}
             >
               <h3 className="text-2xl font-bold">Prev</h3>
             </button>
-
-            {/* Load more button */}
             <button
               type="button"
-              className="flex max-w-full flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
+              className="flex max-w-full flex-col gap-4 rounded-xl bg-black/40 p-4 text-white hover:bg-black/60"
               onClick={() => setPage(page + 1)}
             >
-              <h3 className="text-2xl font-bold">Next (now: {page})</h3>
+              <h3 className="text-2xl font-bold">Next</h3>
             </button>
           </div>
         </div>

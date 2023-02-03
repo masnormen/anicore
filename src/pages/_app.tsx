@@ -4,6 +4,7 @@ import { SessionProvider } from 'next-auth/react';
 import { SWRConfig, type Cache } from 'swr';
 
 import '../styles/globals.css';
+import '../styles/custom.css';
 
 const Anicore: AppType<{ session: Session | null }> = ({ Component, pageProps: { session, ...pageProps } }) => {
   return (
