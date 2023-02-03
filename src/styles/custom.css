@@ -1,0 +1,3 @@
+.bg-conic {
+  @apply bg-[conic-gradient(at_top_left,_var(--tw-gradient-stops))]
+}
