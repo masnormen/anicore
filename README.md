@@ -18,6 +18,12 @@ Yarn:
 $ yarn install
 ```
 
+copy the env file
+
+```sh
+$ cp .env.example .env
+```
+
 and run it
 
 ```sh
